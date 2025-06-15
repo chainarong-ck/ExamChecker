@@ -1,0 +1,45 @@
+# Node.js
+node_modules/
+.next/
+.env
+.env.*
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VSCode
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+/dist/
+/build/
+
+# Misc
+*.log
+
+# File uploads (if not tracked)
+file-storage/uploads/

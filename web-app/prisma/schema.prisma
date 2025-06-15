@@ -1,0 +1,174 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../src/libs/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+// Lookup table
+// super-admin, admin, teacher, student
+model roles {
+    id     Int     @id
+    name   String  @unique @db.VarChar(50)
+    detail String  @db.VarChar(255)
+    users  users[]
+}
+
+model users {
+    id         String    @id @default(uuid()) @db.Char(36)
+    username   String    @unique @db.VarChar(25)
+    password   String    @db.VarChar(60)
+    first_name String    @db.VarChar(50)
+    last_name  String    @db.VarChar(50)
+    role_id    Int       @db.Integer
+    email      String?   @unique @db.VarChar(100)
+    disable    Boolean   @default(false)
+    created_at DateTime  @default(now()) @db.Timestamp(6)
+    updated_at DateTime  @default(now()) @db.Timestamp(6)
+    role       roles     @relation(fields: [role_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    answers    answers[]
+    groups     groups[]
+}
+
+// Lookup table
+// marker, answer, line, std-id-fill
+model region_types {
+    id      Int       @id
+    name    String    @unique @db.VarChar(50)
+    detail  String    @db.VarChar(255)
+    regions regions[]
+}
+
+// Lookup table
+// marker_tl, marker_tr, marker_bl, marker_br, line_1, line_2, answer_1_1, answer_1_2, std-id-fill_1_0, std-id-fill_1_0
+model regions {
+    id               Int                @id
+    name             String             @unique @db.VarChar(50)
+    detail           String             @db.VarChar(255)
+    region_type_id   Int                @db.Integer
+    region_type      region_types       @relation(fields: [region_type_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    template_regions template_regions[]
+}
+
+model templates {
+    id               String             @id @default(uuid()) @db.Char(36)
+    name             String             @db.VarChar(50)
+    image_filename   String             @db.VarChar(255)
+    pdf_filename     String             @db.VarChar(255)
+    total_no         Int                @db.Integer
+    created_at       DateTime           @default(now()) @db.Timestamp(6)
+    updated_at       DateTime           @default(now()) @db.Timestamp(6)
+    template_regions template_regions[]
+    groups           groups[]
+}
+
+model template_regions {
+    id                      Int                       @id @default(autoincrement())
+    template_id             String                    @db.Char(36)
+    region_id               Int                       @db.Integer
+    sx                      Int                       @db.Integer
+    sy                      Int                       @db.Integer
+    ex                      Int                       @db.Integer
+    ey                      Int                       @db.Integer
+    template                templates                 @relation(fields: [template_id], references: [id], onUpdate: Restrict, onDelete: Cascade)
+    region                  regions                   @relation(fields: [region_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    template_marker_centers template_marker_centers[]
+
+    @@unique([template_id, region_id])
+}
+
+model template_marker_centers {
+    template_region_id Int              @id
+    x                  Int              @db.Integer
+    y                  Int              @db.Integer
+    template_region    template_regions @relation(fields: [template_region_id], references: [id], onUpdate: Restrict, onDelete: Cascade)
+}
+
+model answers {
+    id             String           @id @default(uuid()) @db.Char(36)
+    name           String           @db.VarChar(50)
+    owner_id       String           @db.Char(36)
+    subject        String           @db.VarChar(50)
+    year           Int              @db.Integer
+    term           Int              @db.Integer
+    total_no       Int              @db.Integer
+    shared         Boolean          @default(false)
+    disable        Boolean          @default(false)
+    created_at     DateTime         @default(now()) @db.Timestamp(6)
+    updated_at     DateTime         @default(now()) @db.Timestamp(6)
+    owner          users            @relation(fields: [owner_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    answer_details answer_details[]
+    groups         groups[]
+}
+
+model answer_details {
+    id             Int     @id @default(autoincrement())
+    answer_id      String  @db.Char(36)
+    no             Int     @db.Integer
+    point          Int     @db.Integer
+    correct_all    Boolean @default(false)
+    choice_correct Json?
+    answer         answers @relation(fields: [answer_id], references: [id], onUpdate: Restrict, onDelete: Cascade)
+
+    @@unique([answer_id, no])
+}
+
+model groups {
+    id          String    @id @default(uuid()) @db.Char(36)
+    name        String    @unique @db.VarChar(50)
+    subject     String    @db.VarChar(50)
+    year        Int       @db.Integer
+    term        Int       @db.Integer
+    owner_id    String    @db.Char(36)
+    template_id String    @db.Char(36)
+    answer_id   String    @db.Char(36)
+    disable     Boolean   @default(false)
+    created_at  DateTime  @default(now()) @db.Timestamp(6)
+    updated_at  DateTime  @default(now()) @db.Timestamp(6)
+    owner       users     @relation(fields: [owner_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    template    templates @relation(fields: [template_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    answer      answers   @relation(fields: [answer_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+    sheets      sheets[]
+}
+
+// Lookup table
+// pending, queued, processing, completed, error
+model sheet_statuses {
+    id     Int      @id
+    name   String   @unique @db.VarChar(50)
+    detail String   @db.VarChar(255)
+    sheets sheets[]
+}
+
+model sheets {
+    id                      String         @id @default(uuid()) @db.Char(36)
+    original_name           String         @db.VarChar(255)
+    image_filename          String         @db.VarChar(255)
+    group_id                String         @db.Char(36)
+    total_scores            Int?           @db.Integer
+    sheet_status_id         Int            @default(1) @db.Integer
+    process_id              String?        @db.Char(36)
+    marker_tl_center        Json
+    marker_tr_center        Json
+    marker_bl_center        Json
+    marker_br_center        Json
+    predict_ans_detail      Json?
+    predict_ans_result      Json?
+    predict_std_fill_detail Json?
+    predict_std_fill_result Json?
+    created_at              DateTime       @default(now()) @db.Timestamp(6)
+    updated_at              DateTime       @default(now()) @db.Timestamp(6)
+    group                   groups         @relation(fields: [group_id], references: [id], onUpdate: Restrict, onDelete: Cascade)
+    sheet_status            sheet_statuses @relation(fields: [sheet_status_id], references: [id], onUpdate: Restrict, onDelete: Restrict)
+}
+
+// Lookup table 
+// cross, blank, cancel
+model cross_types {
+    id     Int    @id
+    name   String @unique @db.VarChar(50)
+    detail String @db.VarChar(255)
+}
