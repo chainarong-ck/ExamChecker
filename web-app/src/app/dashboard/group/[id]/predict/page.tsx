@@ -677,13 +677,12 @@ export default function PredictDetail_Page({ params }: Props) {
                                                             current_choice_correct = JSON.parse(temp as string);
                                                             current_aiAnswer = aiAnswer[row_number];
                                                         }
-                                                        // console.log("current_choice_correct", typeof current_choice_correct);
-                                                        // console.log(current_choice_correct)
-
-                                                        // console.log("current_aiAnswer", typeof current_aiAnswer);
-                                                        // console.log(current_aiAnswer)
                                                         const choice = i % 4;
-                                                        // const choiceLetter = ["a", "b", "c", "d"][choice];
+
+
+                                                        // AI answer 0 = cancle
+                                                        // AI answer 1 = cross
+                                                        // AI answer 2 = blank
 
                                                         ctx.fillStyle = "rgba(255, 165, 0, 0)";
                                                         if (choice == 0) {
