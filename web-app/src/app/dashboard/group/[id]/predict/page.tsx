@@ -13,7 +13,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 import { calculateScore, parseChoiceCorrect } from "@/libs/scoreCalculator";
 import { formatDateTimeForDisplay } from "@/utils/dateFormatter";
-import { log } from "console";
 
 type Choice = {
     a: number;

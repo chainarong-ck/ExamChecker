@@ -138,7 +138,13 @@ def process_predict_task(
             b_img = cv2.resize(warped_img[b_box['sy']:b_box['ey'], b_box['sx']:b_box['ex']], (26, 26))
             c_img = cv2.resize(warped_img[c_box['sy']:c_box['ey'], c_box['sx']:c_box['ex']], (26, 26))
             d_img = cv2.resize(warped_img[d_box['sy']:d_box['ey'], d_box['sx']:d_box['ex']], (26, 26))
-            
+
+            # โค้ดดักเก็บรูปภาพสำหรับทำ Dataset (ตัวอย่าง)
+            # cv2.imwrite(f"temp/outputFileName_a_img.png", a_img)
+            # cv2.imwrite(f"temp/outputFileName_b_img.png", b_img)
+            # cv2.imwrite(f"temp/outputFileName_c_img.png", c_img)
+            # cv2.imwrite(f"temp/outputFileName_d_img.png", d_img)
+
             a_img = a_img.astype('float32') / 255.0
             a_img = np.expand_dims(a_img, axis=0)
             b_img = b_img.astype('float32') / 255.0
