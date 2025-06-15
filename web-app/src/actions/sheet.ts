@@ -686,7 +686,11 @@ export const GetSheetByGroup = async (
         // ดึงข้อมูลสถานะของแผ่นกระดาษ
         let sheetStatus;
         try {
-            sheetStatus = await prisma.sheet_statuses.findMany();
+            sheetStatus = await prisma.sheet_statuses.findMany({
+                orderBy: {
+                    id: "asc",
+                },
+            });
 
             if (!sheetStatus) {
                 return {

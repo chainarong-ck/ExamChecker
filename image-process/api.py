@@ -87,10 +87,28 @@ def bytesImageTocv2MatLike(img: bytes) -> cv2.typing.MatLike :
     """
 
     if isinstance(img, bytes) :
-        # แปลง bytes stream เป็น numpy array
-        nparr = np.frombuffer(img, np.uint8)
-        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return image
+        # ตรวจสอบว่าเป็น data URL หรือไม่
+        if img.startswith(b'data:image/'):
+            try:
+                # แปลง data URL เป็น binary data
+                import base64
+                data_str = img.decode('utf-8')
+                # แยก header และ data
+                header, data = data_str.split(',', 1)
+                # decode base64
+                img_data = base64.b64decode(data)
+                # แปลง bytes เป็น numpy array
+                nparr = np.frombuffer(img_data, np.uint8)
+                image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                return image
+            except Exception as e:
+                print(f"Error decoding data URL: {e}")
+                return None
+        else:
+            # แปลง bytes stream เป็น numpy array
+            nparr = np.frombuffer(img, np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return image
     else :
         return None
 
@@ -112,6 +130,14 @@ def checkFileType(file: bytes) -> Result_CheckFileType | None :
     try :
         type = filetype.guess(file_bytes)
         if type is None:
+            # ลองตรวจสอบ data URL ถ้าไม่พบประเภทไฟล์
+            if file_bytes and file_bytes.startswith(b'data:image/'):
+                # Extract MIME type from data URL
+                data_str = file_bytes.decode('utf-8', errors='ignore')
+                if 'data:image/png' in data_str:
+                    return Result_CheckFileType(mime="image/png", extension="png")
+                elif 'data:image/jpeg' in data_str or 'data:image/jpg' in data_str:
+                    return Result_CheckFileType(mime="image/jpeg", extension="jpg")
             return None
         else:
             return Result_CheckFileType(
@@ -444,6 +470,16 @@ async def checkMarkerLineForCreateTemplate(
                 },
                 status_code=500
             )
+        
+        # ตรวจสอบว่าเป็นไฟล์รูปภาพที่รองรับหรือไม่
+        if file_type.mime not in ["image/jpeg", "image/png"]:
+            return JSONResponse(
+                content={
+                    "success": False,
+                    "message": "รูปแบบภาพที่ไม่ได้รับการสนับสนุน อนุญาตให้ใช้ JPEG และ PNG เท่านั้น"
+                },
+                status_code=400
+            )
 
         img = bytesImageTocv2MatLike(file_contents)
         if img is None:
@@ -534,6 +570,16 @@ async def checkMarkerLineForUploadFileAtGroup(
                 },
                 status_code=500
             )
+        
+        # ตรวจสอบว่าเป็นไฟล์รูปภาพที่รองรับหรือไม่
+        if file_type.mime not in ["image/jpeg", "image/png"]:
+            return JSONResponse(
+                content={
+                    "success": False,
+                    "message": "รูปแบบภาพที่ไม่ได้รับการสนับสนุน อนุญาตให้ใช้ JPEG และ PNG เท่านั้น"
+                },
+                status_code=400
+            )
 
         img = bytesImageTocv2MatLike(file_contents)
         if img is None:
@@ -623,6 +669,28 @@ async def transform(
     try:
         # อ่านไฟล์ที่อัปโหลด
         image_content = await image.read()
+        
+        # ตรวจสอบประเภทไฟล์
+        file_type = checkFileType(image_content)
+        if file_type is None:
+            return JSONResponse(
+                content={
+                    "success": False,
+                    "message": "ไม่สามารถตรวจสอบประเภทไฟล์ได้"
+                },
+                status_code=500
+            )
+        
+        # ตรวจสอบว่าเป็นไฟล์รูปภาพที่รองรับหรือไม่
+        if file_type.mime not in ["image/jpeg", "image/png"]:
+            return JSONResponse(
+                content={
+                    "success": False,
+                    "message": "รูปแบบภาพที่ไม่ได้รับการสนับสนุน อนุญาตให้ใช้ JPEG และ PNG เท่านั้น"
+                },
+                status_code=400
+            )
+        
         img = bytesImageTocv2MatLike(image_content)
         if img is None:
             return JSONResponse(

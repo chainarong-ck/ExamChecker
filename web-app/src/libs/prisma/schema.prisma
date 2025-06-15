@@ -148,7 +148,7 @@ model sheets {
   original_name           String         @db.VarChar(255)
   image_filename          String         @db.VarChar(255)
   group_id                String         @db.Char(36)
-  total_scores            Int?           @default(0) @db.Integer
+  total_scores            Int?           @db.Integer
   sheet_status_id         Int            @default(1) @db.Integer
   process_id              String?        @db.Char(36)
   marker_tl_center        Json

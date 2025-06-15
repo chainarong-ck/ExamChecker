@@ -106,7 +106,7 @@ def process_predict_task(
                     fills_black.append(digit_pos)
 
             if len(fills_black) == 0:
-                predict_std_fill_result.append(0)
+                predict_std_fill_result.append("x")
             else:
                 if len(fills_black) == 1:
                     predict_std_fill_result.append(int(fills_black[0][1:]))
@@ -124,7 +124,7 @@ def process_predict_task(
                     if most_black_digit:
                         predict_std_fill_result.append(int(most_black_digit[1:]))
                     else:
-                        predict_std_fill_result.append(0)
+                        predict_std_fill_result.append("x")
 
         # Predict answer
         for idx in range(num_answer):

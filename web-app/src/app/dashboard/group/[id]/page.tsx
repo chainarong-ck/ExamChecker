@@ -454,8 +454,12 @@ export default function GroupDetail_Page({ params }: Props) {
                             }).promise;
 
                             const dataUrl = canvas.toDataURL("image/png");
+                            
+                            // Convert data URL to blob
+                            const response = await fetch(dataUrl);
+                            const blob = await response.blob();
                             const pageFile = new File(
-                                [dataUrl],
+                                [blob],
                                 `${file.name}-page${pageNum}.png`,
                                 { type: "image/png" }
                             );
