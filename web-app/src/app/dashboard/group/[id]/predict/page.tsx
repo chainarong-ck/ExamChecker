@@ -11,6 +11,8 @@ import { GetSheetByGroup } from "@/actions/sheet";
 import { Predict, TransformImage } from "@/actions/predict";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { calculateScore, parseChoiceCorrect } from "@/libs/scoreCalculator";
+import { formatDateForDisplay, formatDateTimeForDisplay } from "@/utils/dateFormatter";
 
 type Choice = {
     a: number;
@@ -465,19 +467,10 @@ export default function PredictDetail_Page({ params }: Props) {
                                             </th>
                                             <td className="border border-neutral-700 dark:border-neutral-400 text-left px-3 py-1">
                                                 {sheet.predict_std_fill_result
-                                                    ? `${(
-                                                          JSON.parse(
-                                                              sheet.predict_std_fill_result
-                                                          ) as Array<number>
-                                                      )
-                                                          .slice(0, 12)
-                                                          .join("")}-${
-                                                          (
-                                                              JSON.parse(
-                                                                  sheet.predict_std_fill_result
-                                                              ) as Array<number>
-                                                          )[12]
-                                                      }`
+                                                    ? (() => {
+                                                        const stdFillResult = JSON.parse(sheet.predict_std_fill_result) as Array<number>;
+                                                        return `${stdFillResult.slice(0, 12).join("")}-${stdFillResult[12]}`;
+                                                    })()
                                                     : "-"}
                                             </td>
                                         </tr>
@@ -526,7 +519,7 @@ export default function PredictDetail_Page({ params }: Props) {
                                                 วันที่ตรวจ
                                             </th>
                                             <td className="border border-neutral-700 dark:border-neutral-400 text-left px-3 py-1">
-                                                {`${sheet.updated_at}`}
+                                                {formatDateTimeForDisplay(sheet.updated_at)}
                                             </td>
                                         </tr>
                                     </tbody>
@@ -642,7 +635,7 @@ export default function PredictDetail_Page({ params }: Props) {
                                                             .join(", ") || "-"}
                                                     </td>
                                                     <td className="border border-neutral-700 dark:border-neutral-400">
-                                                        {/* คะแนนที่นักศึกษาได้รับ */}
+                                                        {/* คะแนนที่นักศึกษาได้รับ - ใช้ฟังก์ชันเดียวกันกับ API */}
                                                         {(() => {
                                                             const answerDetail =
                                                                 answerData.answer_details.find(
@@ -658,121 +651,15 @@ export default function PredictDetail_Page({ params }: Props) {
                                                                 return "-";
                                                             }
 
-                                                            let correctChoices;
-                                                            try {
-                                                                correctChoices =
-                                                                    JSON.parse(
-                                                                        answerDetail.choice_correct
-                                                                    );
+                                                            const correctChoices = parseChoiceCorrect(answerDetail.choice_correct);
+                                                            const score = calculateScore({
+                                                                studentChoices: shData,
+                                                                correctChoices,
+                                                                correctAll: answerDetail.correct_all,
+                                                                point: answerDetail.point
+                                                            });
 
-                                                                // ถ้ายังเป็น string อยู่ ให้ parse อีกครั้ง
-                                                                if (
-                                                                    typeof correctChoices ===
-                                                                    "string"
-                                                                ) {
-                                                                    correctChoices =
-                                                                        JSON.parse(
-                                                                            correctChoices
-                                                                        );
-                                                                }
-                                                            } catch (error) {
-                                                                console.error(
-                                                                    "Error parsing JSON:",
-                                                                    error
-                                                                );
-                                                                return "-";
-                                                            }
-
-                                                            const correctChoicesArray =
-                                                                Object.entries(
-                                                                    correctChoices
-                                                                )
-                                                                    .filter(
-                                                                        ([
-                                                                            ,
-                                                                            value,
-                                                                        ]) =>
-                                                                            value ===
-                                                                            true
-                                                                    )
-                                                                    .map(
-                                                                        ([
-                                                                            key,
-                                                                        ]) =>
-                                                                            key
-                                                                    );
-
-                                                            const studentChoices =
-                                                                Object.entries(
-                                                                    shData
-                                                                )
-                                                                    .filter(
-                                                                        ([
-                                                                            ,
-                                                                            value,
-                                                                        ]) =>
-                                                                            value ===
-                                                                            1
-                                                                    )
-                                                                    .map(
-                                                                        ([
-                                                                            choice,
-                                                                        ]) =>
-                                                                            choice
-                                                                    );
-
-                                                            if (
-                                                                answerData
-                                                                    .answer_details[
-                                                                    index
-                                                                ].correct_all
-                                                            ) {
-                                                                // ต้องตอบถูกทุกข้อย่อย
-                                                                const allCorrect =
-                                                                    correctChoicesArray.every(
-                                                                        (
-                                                                            choice: string
-                                                                        ) =>
-                                                                            studentChoices.includes(
-                                                                                choice
-                                                                            )
-                                                                    ) &&
-                                                                    studentChoices.every(
-                                                                        (
-                                                                            choice: string
-                                                                        ) =>
-                                                                            correctChoicesArray.includes(
-                                                                                choice
-                                                                            )
-                                                                    );
-                                                                return allCorrect
-                                                                    ? answerDetail.point
-                                                                    : 0;
-                                                            } else {
-                                                                // ตอบถูกบางข้อก็ได้คะแนน
-                                                                const hasCorrectChoice =
-                                                                    studentChoices.some(
-                                                                        (
-                                                                            choice: string
-                                                                        ) =>
-                                                                            correctChoicesArray.includes(
-                                                                                choice
-                                                                            )
-                                                                    );
-                                                                const hasWrongChoice =
-                                                                    studentChoices.some(
-                                                                        (
-                                                                            choice: string
-                                                                        ) =>
-                                                                            !correctChoicesArray.includes(
-                                                                                choice
-                                                                            )
-                                                                    );
-                                                                return hasCorrectChoice &&
-                                                                    !hasWrongChoice
-                                                                    ? answerDetail.point
-                                                                    : 0;
-                                                            }
+                                                            return score;
                                                         })()}
                                                     </td>
                                                 </tr>
@@ -942,19 +829,10 @@ export default function PredictDetail_Page({ params }: Props) {
                                             </td>
                                             <td className="border border-neutral-700 dark:border-neutral-400">
                                                 {shData.predict_std_fill_result
-                                                    ? `${(
-                                                          JSON.parse(
-                                                              shData.predict_std_fill_result
-                                                          ) as Array<number>
-                                                      )
-                                                          .slice(0, 12)
-                                                          .join("")}-${
-                                                          (
-                                                              JSON.parse(
-                                                                  shData.predict_std_fill_result
-                                                              ) as Array<number>
-                                                          )[12]
-                                                      }`
+                                                    ? (() => {
+                                                        const stdFillResult = JSON.parse(shData.predict_std_fill_result) as Array<number>;
+                                                        return `${stdFillResult.slice(0, 12).join("")}-${stdFillResult[12]}`;
+                                                    })()
                                                     : "-"}
                                             </td>
                                             <td className="border border-neutral-700 dark:border-neutral-400">
@@ -1002,9 +880,10 @@ export default function PredictDetail_Page({ params }: Props) {
 
         // สร้างข้อมูลสำหรับตารางแรก (ข้อมูลทั่วไป)
         const studentId = sheetData.predict_std_fill_result 
-            ? (JSON.parse(sheetData.predict_std_fill_result) as Array<number>)
-                .slice(0, 12)
-                .join("") + "-" + (JSON.parse(sheetData.predict_std_fill_result) as Array<number>)[12]
+            ? (() => {
+                const stdFillResult = JSON.parse(sheetData.predict_std_fill_result) as Array<number>;
+                return `${stdFillResult.slice(0, 12).join("")}-${stdFillResult[12]}`;
+            })()
             : "ไม่ระบุ";
 
         const generalData = [
@@ -1014,7 +893,7 @@ export default function PredictDetail_Page({ params }: Props) {
             ["กลุ่มการตรวจ", groupData.name],
             ["ชุดเฉลย", answerData.name],
             ["กระดาษแม่แบบ", templateData.name],
-            ["วันที่ตรวจ", sheetData.updated_at.toLocaleDateString('th-TH')],
+            ["วันที่ตรวจ", formatDateForDisplay(sheetData.updated_at)],
             [], // แถวว่างสำหรับแบ่งตาราง
         ];
 
@@ -1057,41 +936,16 @@ export default function PredictDetail_Page({ params }: Props) {
                     // สร้างสตริงคำตอบของนักศึกษา
                     const studentAnswer = `${shData.a === 1 ? "a " : ""}${shData.b === 1 ? "b " : ""}${shData.c === 1 ? "c " : ""}${shData.d === 1 ? "d " : ""}`.trim();
                     
-                    // คำนวณคะแนน
+                    // คำนวณคะแนนโดยใช้ฟังก์ชันเดียวกันกับ API
                     let score = 0;
                     if (answerDetail.choice_correct) {
-                        try {
-                            let correctChoices = JSON.parse(answerDetail.choice_correct);
-                            if (typeof correctChoices === "string") {
-                                correctChoices = JSON.parse(correctChoices);
-                            }
-                            
-                            if (answerDetail.correct_all) {
-                                // ถ้าต้องตอบถูกทุกตัวเลือก
-                                const isCorrect = 
-                                    (correctChoices.a ? (shData.a === 1) : (shData.a === 0)) &&
-                                    (correctChoices.b ? (shData.b === 1) : (shData.b === 0)) &&
-                                    (correctChoices.c ? (shData.c === 1) : (shData.c === 0)) &&
-                                    (correctChoices.d ? (shData.d === 1) : (shData.d === 0));
-                                    
-                                if (isCorrect) {
-                                    score = answerDetail.point;
-                                }
-                            } else {
-                                // ถ้าตอบถูกบางตัวเลือกก็ได้คะแนน
-                                const hasCorrectChoice = 
-                                    (correctChoices.a && shData.a === 1) ||
-                                    (correctChoices.b && shData.b === 1) ||
-                                    (correctChoices.c && shData.c === 1) ||
-                                    (correctChoices.d && shData.d === 1);
-                                    
-                                if (hasCorrectChoice) {
-                                    score = answerDetail.point;
-                                }
-                            }
-                        } catch (error) {
-                            console.error("Error calculating score:", error);
-                        }
+                        const correctChoices = parseChoiceCorrect(answerDetail.choice_correct);
+                        score = calculateScore({
+                            studentChoices: shData,
+                            correctChoices,
+                            correctAll: answerDetail.correct_all,
+                            point: answerDetail.point
+                        });
                     }
                     
                     resultData.push([
@@ -1154,9 +1008,10 @@ export default function PredictDetail_Page({ params }: Props) {
 
         sheetData.forEach((shData, index) => {
             const studentId = shData.predict_std_fill_result 
-                ? (JSON.parse(shData.predict_std_fill_result) as Array<number>)
-                    .slice(0, 12)
-                    .join("") + "-" + (JSON.parse(shData.predict_std_fill_result) as Array<number>)[12]
+                ? (() => {
+                    const stdFillResult = JSON.parse(shData.predict_std_fill_result) as Array<number>;
+                    return `${stdFillResult.slice(0, 12).join("")}-${stdFillResult[12]}`;
+                })()
                 : "ไม่ระบุ";
 
             const score = shData.total_scores || 0;
@@ -1253,9 +1108,10 @@ export default function PredictDetail_Page({ params }: Props) {
                                 </td>
                                 <td className="text-center p-2">
                                     {sheet.predict_std_fill_result
-                                        ? (JSON.parse(
-                                              sheet.predict_std_fill_result
-                                          ) as Array<number>)
+                                        ? (() => {
+                                            const stdFillResult = JSON.parse(sheet.predict_std_fill_result) as Array<number>;
+                                            return `${stdFillResult.slice(0, 12).join("")}-${stdFillResult[12]}`;
+                                        })()
                                         : "-"}
                                 </td>
                                 <td className="text-center p-2">

@@ -9,6 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { DeleteAnswer, GetAnswer, UpdateAnswer } from "@/actions/answer";
+import { formatDateTimeForDisplay } from "@/utils/dateFormatter";
 
 type Props = {
     params: Promise<{
@@ -321,8 +322,8 @@ export default function AnswerDetail_Page({ params }: Props) {
                 <div className="p-2 my-2">
                     <div className="flex justify-between">
                         <div>
-                            <p>สร้างเมื่อ : {createAt?.toLocaleString()}</p>
-                            <p>อัพเดตเมื่อ : {updateAt?.toLocaleString()}</p>
+                            <p>สร้างเมื่อ : {createAt ? formatDateTimeForDisplay(createAt) : '-'}</p>
+                            <p>อัพเดตเมื่อ : {updateAt ? formatDateTimeForDisplay(updateAt) : '-'}</p>
                         </div>
                         <div className="relative">
                             <button

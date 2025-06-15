@@ -19,6 +19,7 @@ import {
 import Swal from "sweetalert2";
 import { DeleteTemplate, GetTemplate } from "@/actions/template";
 import { GetImage } from "@/actions/file_storage";
+import { formatDateTimeForDisplay } from "@/utils/dateFormatter";
 
 type TemplateRegions = {
     id: number;
@@ -324,11 +325,11 @@ export default function TemplateDetailPage({ params }: Props) {
                         <div>
                             <p>
                                 สร้างเมื่อ :{" "}
-                                {template?.created_at.toLocaleString()}
+                                {template ? formatDateTimeForDisplay(template.created_at) : '-'}
                             </p>
                             <p>
                                 อัพเดทเมื่อ :{" "}
-                                {template?.updated_at.toLocaleString()}
+                                {template ? formatDateTimeForDisplay(template.updated_at) : '-'}
                             </p>
                         </div>
                         <div className="relative">

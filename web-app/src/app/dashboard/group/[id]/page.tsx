@@ -20,6 +20,7 @@ import {
     UploadSheet,
 } from "@/actions/sheet";
 import { GetImage } from "@/actions/file_storage";
+import { formatDateTimeForDisplay } from "@/utils/dateFormatter";
 
 type Select_Answer_Template = {
     id: string;
@@ -870,8 +871,8 @@ export default function GroupDetail_Page({ params }: Props) {
                 <div className="p-2 my-2">
                     <div className="flex justify-between">
                         <div>
-                            <p>สร้างเมื่อ : {createAt?.toLocaleString()}</p>
-                            <p>อัพเดทเมื่อ : {updateAt?.toLocaleString()}</p>
+                            <p>สร้างเมื่อ : {createAt ? formatDateTimeForDisplay(createAt) : '-'}</p>
+                            <p>อัพเดทเมื่อ : {updateAt ? formatDateTimeForDisplay(updateAt) : '-'}</p>
                         </div>
                         <div className="relative">
                             <button
